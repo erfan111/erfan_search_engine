@@ -18,6 +18,7 @@ class inverted_index {
     private static HashMap<String,Double[]> weights = new HashMap<>();
     private static String[] files;
     private static HashMap<String,Integer> doc_id = new HashMap<>();
+    private static HashMap<Integer,String> inverse_doc_id = new HashMap<>();
     private static Integer N;
 
 
@@ -72,15 +73,17 @@ class inverted_index {
             files = file.list();
             assert files != null;
             N = files.length;
-            Integer n = 1;
+            Integer n = 0;
             for (String ff : files) {
                 doc_id.put(ff, n);
+                inverse_doc_id.put(n, ff);
                 n++;
             }
             System.out.println("Reading files:");
             for (int j = 0; j < N && Runtime.getRuntime().freeMemory() > 1000; j++)
                 try {
                     System.out.println(files[j]);
+                    System.out.println(j);
                     System.out.println("----------------------");
                     FileReader fReader = new FileReader("/home/erfan/Documents/programming/invertedIndex/dataset/" + files[j]);
                     BufferedReader br = new BufferedReader(fReader);
@@ -153,7 +156,7 @@ class inverted_index {
             weights.put(word, word_weights);
         }
 
-//        System.out.println(thedictionary);
+//        System.out.println(thedictionary.get("ball"));
 //        System.out.println(doc_id);
 
 
@@ -178,28 +181,27 @@ class inverted_index {
         }
         if(new_method) {
             ranklist = calc_rank_ratio(stemmed_query, comparator);
-
-            RankTuple temp;
-            Stack<RankTuple> output = new Stack<>();
+//            RankTuple temp;
+//            Stack<RankTuple> output = new Stack<>();
             if(ranklist.size() <10) {
                 for (int j = 1; j <= ranklist.size(); j++) {
-                    output.push(ranklist.poll());
+                    System.out.println(j + ") " + inverse_doc_id.get(ranklist.poll().x));
                 }
-                for (int j = 1; j <= ranklist.size(); j++) {
-                    temp = output.pop();
-                    if(temp.y != 0)
-                        System.out.println(j + ") " + files[temp.x - 1]);
-                }
+//                for (int j = 1; j <= ranklist.size(); j++) {
+//                    temp = output.pop();
+//                    if(temp.y != 0)
+//                        System.out.println(j + ") " + inverse_doc_id.get(temp.x);
+//                }
             }
             else{
-                for (int j = 1; j <= ranklist.size(); j++) {
-                    output.push(ranklist.poll());
-                }
                 for (int j = 1; j <= 10; j++) {
-                    temp = output.pop();
-                    if(temp.y != 0)
-                        System.out.println(j + ") " + files[temp.x - 1]);
+                    System.out.println(j + ") " + inverse_doc_id.get(ranklist.poll().x));
                 }
+//                for (int j = 1; j <= 10; j++) {
+//                    temp = output.pop();
+//                    if(temp.y != 0)
+//                        System.out.println(j + ") " + inverse_doc_id.get(temp.x) + " " + files[temp.x]);
+//                }
 
             }
         } else {
@@ -213,7 +215,7 @@ class inverted_index {
                 for (int j = 1; j <= N; j++) {
                     temp = output.pop();
                     if(temp.y != 0)
-                        System.out.println(j + ") " + files[temp.x - 1]);
+                        System.out.println(j + ") " + files[temp.x]);
                 }
             }
             else{
@@ -223,7 +225,7 @@ class inverted_index {
                 for (int j = 1; j <= 10; j++) {
                     temp = output.pop();
                     if(temp.y != 0)
-                        System.out.println(j + ") " + files[temp.x - 1]);
+                        System.out.println(j + ") " + files[temp.x]);
                 }
 
             }
@@ -268,11 +270,11 @@ class inverted_index {
     private static PriorityQueue<RankTuple> calc_rank_ratio(String[] q, Comparator tc){
         PriorityQueue<RankTuple> result = new PriorityQueue<>(tc);
         if(q.length == 2){
-            HashMap<Integer, Double> common = intersect(thedictionary.get(q[0]), thedictionary.get(q[1]));
+            HashMap<Integer, Double> common = union(thedictionary.get(q[0]), thedictionary.get(q[1]));
             result.addAll(common.entrySet().stream().map(entry -> new RankTuple(entry.getKey(), Math.abs(entry.getValue()
                     - 2))).collect(Collectors.toList()));
         }
-        System.out.println(result);
+//        System.out.println(result);
         return result;
 
     }
@@ -389,6 +391,7 @@ class inverted_index {
         boolean finished = false;
         while(!finished){
             if(pointer1.x.equals(pointer2.x)){
+                System.out.println("doc: " + pointer1.x + " tf1: " + pointer1.y + " ft2: " + pointer2.y);
                 resultList.put(pointer1.x, (pointer1.y * 1.0)/ pointer2.y);
                 if(pIndex1 < l1.size()-1)
                     pointer1 = l1.get(++pIndex1);
@@ -400,18 +403,73 @@ class inverted_index {
                     finished = true;
             }
             else if(pointer1.x > pointer2.x) {
-                if(pIndex1 < l2.size()-1)
-                    pointer1 = l2.get(++pIndex1);
+                if(pIndex1 < l1.size()-1)
+                    pointer1 = l1.get(++pIndex1);
                 else
                     finished = true;
             }
             else {
-                if(pIndex2 < l1.size()-1)
-                    pointer2 = l1.get(++pIndex2);
+                if(pIndex2 < l2.size()-1)
+                    pointer2 = l2.get(++pIndex2);
                 else
                     finished = true;
             }
         }
+//        System.out.println(resultList);
+        return resultList;
+    }
+
+    @SuppressWarnings("Duplicates")
+    private static HashMap<Integer, Double> union(LinkedList<Tuple<Integer, Integer, ArrayList<Integer>>> l1, LinkedList<Tuple<Integer, Integer, ArrayList<Integer>>> l2){
+        HashMap<Integer, Double> resultList = new HashMap<>();
+        int pIndex1 = 0;
+        int pIndex2 = 0;
+        Tuple<Integer, Integer, ArrayList<Integer>> pointer1 = l1.get(pIndex1);
+        Tuple<Integer, Integer, ArrayList<Integer>> pointer2 = l2.get(pIndex2);
+        boolean finished1 = false;
+        boolean finished2 = false;
+        while(!finished1 && !finished2){
+            if(pointer1.x.equals(pointer2.x)){
+                resultList.put(pointer1.x, ((pointer1.y * 1.0) + 0.9)/ (pointer2.y + 0.9));
+                if(pIndex1 < l1.size()-1)
+                    pointer1 = l1.get(++pIndex1);
+                else
+                    finished1 = true;
+                if(pIndex2 < l2.size()-1)
+                    pointer2 = l2.get(++pIndex2);
+                else
+                    finished2 = true;
+            }
+            else if(pointer1.x > pointer2.x) {
+                if(pIndex1 < l1.size()-1) {
+                    resultList.put(pointer1.x, (pointer1.y + 0.9) / 0.9);
+                    pointer1 = l1.get(++pIndex1);
+                } else
+                    finished1 = true;
+            }
+            else {
+                if(pIndex2 < l2.size()-1) {
+                    resultList.put(pointer2.x, 0.9 / (pointer2.y + 0.9));
+                    pointer2 = l2.get(++pIndex2);
+                } else
+                    finished2 = true;
+            }
+        }
+        while (!finished1){
+            if(pIndex1 < l1.size()-1) {
+                resultList.put(pointer1.x, (pointer1.y + 0.9) / 0.9);
+                pointer1 = l1.get(++pIndex1);
+            } else
+                finished1 = true;
+        }
+        while (!finished2){
+            if(pIndex2 < l2.size()-1) {
+                resultList.put(pointer2.x, 0.9 / (pointer2.y + 0.9));
+                pointer2 = l2.get(++pIndex2);
+            } else
+                finished2 = true;
+        }
+        System.out.println(resultList);
         return resultList;
     }
 
