@@ -7,7 +7,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        inverted_index.query(true, true);
+        inverted_index.query(true, false, "zealand australia players", new Double[]{2.0,1.0, 1.5});
 //        Double a,b,c;
 //        a = 0.14;
 //        b= 0.320;
@@ -16,83 +16,65 @@ public class Main {
 }
 
 /*
-1) 654
-2) 215 *
-3) 254
-4) 343
-5) 101
-6) 713
-7) 225 **
-8) 730 *
-9) 340 *
-10) 538 *
-*/
+1) agffc304 0.44714881869876133 lucene bool 11
+2) agffc550 0.3530042288726905 lucene bool 13
+3) agffc19 0.31606203437804076 lucene bool 19
+4) agffc518 0.3158097599403168 lucene bool 20
+5) agffc183 0.31532642333105093 lucene bool 12
+6) agffc64 0.2986255370625376 lucene bool 14
+7) agffc88 0.2975166444786177 lucene bool 16
+8) agffc145 0.2975166444786177 lucene bool 17
+9) agffc430 0.2873766109327521
+10) agffc411 0.28097699275883237
+11) agffc142 0.27297657949253884    Lucene phrase 1 bool 1
+12) agffc377 0.2609918855669763
+13) agffc710 0.2575575590529879 lucene bool 18
+14) agffc99 0.2392814159970565
+15) agffc309 0.2227786854316294
+16) agffc59 0.22103943225713332
+17) agffc705 0.21971476463337378 lucene bool 15
+18) agffc480 0.2068742546036077
+19) agffc417 0.20225596618912683
+20) agffc221 0.19941581827930102 *** lucene bool 2
+21) agffc77 0.19413960621981194
+22) agffc625 0.1925306581072311
+23) agffc308 0.19222445566253565
+24) agffc370 0.17987593521582587
+25) agffc413 0.1789116698848621
+26) agffc688 0.17699381281060947    lucene bool 3
+27) agffc406 0.17569524943554055
+28) agffc318 0.17507268528448308
+29) agffc35 0.1697741603643405
+30) agffc260 0.16670375447294822
+31) agffc729 0.16328726465950777
+32) agffc632 0.1580538898756666
+33) agffc66 0.15263909911118093
+34) agffc655 0.14993681141469004
+35) agffc702 0.1492259541809942
+36) agffc313 0.14328264072798624
+37) agffc395 0.13962108840027013 ** lucene bool 4
+38) agffc138 0.1377874036303029
+39) agffc343 0.13420855528505396
+40) agffc225 0.13068131586814932
+41) agffc4 0.1306437761783545           Lucene phrase query result 2 bool 10
+42) agffc179 0.12972220231048986
+43) agffc485 0.11498400194959867    lucene bool 5
+44) agffc730 0.11339956377038386
+45) agffc407 0.10966835632290522
+46) agffc569 0.10826951299537059
+47) agffc486 0.10348629066510767
+48) agffc492 0.10166439107988845
+49) agffc325 0.09989059259491792 *** ***
+50) agffc618 0.09815906928292462
 
-// 225
-// 650
+new method (ratio)
+1) agffc667 lucene bool 6
+2) agffc395 lucene bool 4
+3) agffc221 lucene bool 2
+4) agffc447
+5) agffc12 lucene bool 9
+6) agffc325 lucene bool 7
+7) agffc21 lucene bool 8
 
-/*
 
-Title: 215
-Title: 48
-Title: 225
-Title: 730
-Title: 114
-Title: 340
-Title: 2
-Title: 160
-Title: 592
-Title: 737
-Title: 175
-Title: 391
-Title: 538
-Title: 186
-Title: 281
-Title: 37
-Title: 650
-Title: 157
-Title: 312
-Title: 428
- */
-
-/* SHOULD
-Title: 215
-
-Title: 48
-
-Title: 225
-
-Title: 730
-
-Title: 114
-
-Title: 340
-
-Title: 2
-
-Title: 160
-
-Title: 592
-
-Title: 737
-
-Title: 175
-
-Title: 391
-
-Title: 538
-
-Title: 186
-
-Title: 281
-
-Title: 37
-
-Title: 650
-
-Title: 157
-
-Title: 312
-
-Title: 428
  */

@@ -162,15 +162,14 @@ class inverted_index {
 
     }
 
-    static void query(boolean weighted_flag, boolean new_method) throws IOException {
+    static void query(boolean weighted_flag, boolean new_method, String input, Double[] inputWeight) throws IOException {
         read();
-        System.out.print("Please input your query: ");
-        Scanner sc = new Scanner(System.in);
-        String input = sc.nextLine();
+//        System.out.print("Please input your query: ");
+//        Scanner sc = new Scanner(System.in);
+//        String input = sc.nextLine();
         String[] user_query = input.split("[^\\d^\\w]");
         String[] stemmed_query = new String[user_query.length];
         Stemmer stemmer = new Stemmer();
-        Comparator<RankTuple> comparator = new TupleComparator();
         PriorityQueue<RankTuple> ranklist;
         // for each term in user's query:
         for(Integer qi=0; qi < user_query.length;qi++){
@@ -180,21 +179,15 @@ class inverted_index {
             stemmed_query[qi] = stemmer.toString();
         }
         if(new_method) {
-            ranklist = calc_rank_ratio(stemmed_query, comparator);
-//            RankTuple temp;
-//            Stack<RankTuple> output = new Stack<>();
-            if(ranklist.size() <10) {
+            Comparator<RankTuple> comparator = new RankTupleComparator();
+            ranklist = calc_rank_ratio(stemmed_query, inputWeight,  comparator);
+            if(ranklist.size() <50) {
                 for (int j = 1; j <= ranklist.size(); j++) {
                     System.out.println(j + ") " + inverse_doc_id.get(ranklist.poll().x));
                 }
-//                for (int j = 1; j <= ranklist.size(); j++) {
-//                    temp = output.pop();
-//                    if(temp.y != 0)
-//                        System.out.println(j + ") " + inverse_doc_id.get(temp.x);
-//                }
             }
             else{
-                for (int j = 1; j <= 10; j++) {
+                for (int j = 1; j <= 50; j++) {
                     System.out.println(j + ") " + inverse_doc_id.get(ranklist.poll().x));
                 }
 //                for (int j = 1; j <= 10; j++) {
@@ -205,27 +198,28 @@ class inverted_index {
 
             }
         } else {
-            ranklist = calc_rank(stemmed_query, comparator, weighted_flag);
+            Comparator<RankTuple> comparator = new TupleComparator();
+            ranklist = calc_rank(stemmed_query, inputWeight, comparator, weighted_flag);
             RankTuple temp;
             Stack<RankTuple> output = new Stack<>();
-            if(N<10) {
+            if(N<50) {
                 for (int j = 1; j <= N; j++) {
                     output.push(ranklist.poll());
                 }
                 for (int j = 1; j <= N; j++) {
                     temp = output.pop();
                     if(temp.y != 0)
-                        System.out.println(j + ") " + files[temp.x]);
+                        System.out.println(j + ") " + files[temp.x]  + " " + temp.y);
                 }
             }
             else{
                 for (int j = 1; j <= N; j++) {
                     output.push(ranklist.poll());
                 }
-                for (int j = 1; j <= 10; j++) {
+                for (int j = 1; j <= 50; j++) {
                     temp = output.pop();
                     if(temp.y != 0)
-                        System.out.println(j + ") " + files[temp.x]);
+                        System.out.println(j + ") " + files[temp.x]  + " " + temp.y);
                 }
 
             }
@@ -233,7 +227,7 @@ class inverted_index {
 
     }
 
-    private static PriorityQueue<RankTuple> calc_rank(String[] q, Comparator tc, boolean weighted_query){
+    private static PriorityQueue<RankTuple> calc_rank(String[] q, Double[] q_w, Comparator tc, boolean weighted_query){
         Double q_term_size = 1.00;
         PriorityQueue<RankTuple> result = new PriorityQueue<>(N,tc);
         for(int doc=1; doc < N+1; doc++){
@@ -241,7 +235,7 @@ class inverted_index {
             if(weighted_query) {
                 for (int queryTermIndex = 0; queryTermIndex < q.length; queryTermIndex++) {
                     Double[] word_w = weights.get(q[queryTermIndex]);
-                    if (word_w != null) qdotd += (q.length - queryTermIndex) * word_w[doc];
+                    if (word_w != null) qdotd += q_w[queryTermIndex] * word_w[doc];
                 }
             } else {
                 for (String aQ : q) {
@@ -256,7 +250,7 @@ class inverted_index {
             if(weighted_query) {
                 Double sigmaQ = 0.00;
                 for (int qn = 0; qn < q.length; qn++) {
-                    sigmaQ += qn * qn;
+                    sigmaQ += q_w[qn] * q_w[qn];
                 }
                 q_term_size = Math.sqrt(sigmaQ);
             }
@@ -267,14 +261,34 @@ class inverted_index {
         return result;
     }
 
-    private static PriorityQueue<RankTuple> calc_rank_ratio(String[] q, Comparator tc){
+    private static PriorityQueue<RankTuple> calc_rank_ratio(String[] q, Double[] q_w,  Comparator tc){
         PriorityQueue<RankTuple> result = new PriorityQueue<>(tc);
         if(q.length == 2){
-            HashMap<Integer, Double> common = union(thedictionary.get(q[0]), thedictionary.get(q[1]));
+            HashMap<Integer, Double> common = intersect(thedictionary.get(q[0]), thedictionary.get(q[1]));
             result.addAll(common.entrySet().stream().map(entry -> new RankTuple(entry.getKey(), Math.abs(entry.getValue()
-                    - 2))).collect(Collectors.toList()));
+                    - (q_w[0] / q_w[1])))).collect(Collectors.toList()));
         }
-//        System.out.println(result);
+        else{
+            HashMap <Integer, Tuple<Double,Integer,Integer>> tempRatioHolder = new HashMap<>();
+            for(int i=0;i < q.length-1;i++){
+                System.out.println(q[i] + " " + q[i+1]);
+                HashMap<Integer, Double> common = intersect(thedictionary.get(q[i]), thedictionary.get(q[i+1]));
+                for(Map.Entry<Integer, Double> entry : common.entrySet()){
+                    if(tempRatioHolder.containsKey(entry.getKey())) {
+                        Tuple<Double, Integer, Integer> t = tempRatioHolder.get(entry.getKey());
+//                        Double prev_sum = (t.x*t.y);
+                        t.x = t.x + (1/( 0.01 + Math.abs(entry.getValue() - Math.abs(q_w[i] / q_w[i + 1]))));
+                        tempRatioHolder.put(entry.getKey(), t);
+                        System.out.println(entry.getKey());
+                    } else
+                        tempRatioHolder.put(entry.getKey(), new Tuple((1/ (0.01 + Math.abs(entry.getValue() - Math.abs(q_w[i] / q_w[i + 1])))), 1,1));
+                }
+            }
+            //noinspection SuspiciousNameCombination
+            result.addAll(tempRatioHolder.entrySet().stream().map(entry -> new RankTuple(entry.getKey(),
+                        entry.getValue().x )).collect(Collectors.toList()));
+        }
+        System.out.println(result);
         return result;
 
     }
